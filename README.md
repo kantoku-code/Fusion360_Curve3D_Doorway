@@ -31,6 +31,7 @@ To register an add-in,Please follow the instructions [here](https://knowledge.au
 - The elements that can be imported are lines, arcs, splines (Nurbs curves), and points. Ellipses are not eligible.
 
 - After importing, a sketch with the name <file name> + "\_3DCurves" will be created.
+
   ![Alt text](./resources/result_eng.png)
 
 - An error will occur if the file name contains double-byte characters.
