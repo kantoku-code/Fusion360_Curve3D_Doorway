@@ -1,4 +1,4 @@
-# Byte-compiled / optimized / DLL files
+Release as an add-in# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
@@ -25,12 +25,16 @@ share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-MANIFEST
+# MANIFEST
+
+# other
+.vscode
+tmp/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
+# *.manifest
 *.spec
 
 # Installer logs
