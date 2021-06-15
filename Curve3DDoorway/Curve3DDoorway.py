@@ -1,5 +1,5 @@
 #Author-kantoku
-#Description-Two-turn Mobius strip
+#Description-It provides import and export functions for 3D curves.
 #Fusion360API Python
 
 import adsk.core
