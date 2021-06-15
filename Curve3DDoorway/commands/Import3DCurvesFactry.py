@@ -2,22 +2,21 @@
 # Description-Import 3D Curves
 # Fusion360API Python Addins
 
-from os.path import join
 import adsk.core
 import adsk.fusion
 import traceback
-import os
 import subprocess
+import pathlib
 
 
 #-----設定------
-this_dir = os.path.dirname(os.path.abspath(__file__))
+this_dir = pathlib.Path(__file__).resolve().parent
 
 #mruby_sirenパス
-_siren_path = this_dir + r'\siren_0.14d_mingw64\bin\mruby.exe'
+_siren_path = this_dir / r'siren_0.14d_mingw64\bin\mruby.exe'
 
 #ｲﾝﾎﾟｰﾄ用sirenｽﾌﾟﾘｸﾄパス
-_siren_script_path = this_dir + r'\siren_import.rb'
+_siren_script_path = this_dir / r'siren_import.rb'
 #-------------
 
 from .ktkLanguageMessage import LangMsg
@@ -52,14 +51,11 @@ class Import3DCurvesFactry:
 
             # ファイルの選択
             im_path = select_File(ui)
-            if im_path == None:
+            if not im_path:
                 return
 
             # sirenでの読み込み
-            im_path_basename = os.path.basename(im_path)
-            # ****ここでリネームしたい
-            infos = subprocess.check_output([_siren_path, _siren_script_path, im_path])
-            # ****ここで再リネーム
+            infos = execSirenScript(im_path)
 
             # 情報変換
             crv_infos = conv_Siren_date(infos)
@@ -73,7 +69,7 @@ class Import3DCurvesFactry:
             # Include
             des = adsk.fusion.Design.cast(app.activeProduct)
             comp = des.rootComponent
-            skt_name = im_path_basename + '_3DCurves'
+            skt_name = im_path.name + '_3DCurves'
             if IsParametric():
                 baseF = comp.features.baseFeatures.add()
                 baseF.startEdit()
@@ -88,17 +84,54 @@ class Import3DCurvesFactry:
                 ui.messageBox('ｴﾗｰ\n{}'.format(traceback.format_exc()))
 
 
+# sirenでの読み込み
+def execSirenScript(path):
+
+    def getUniqueName(path) -> str:
+        suffix = path.suffix
+        files = [f.name for f in path.parent.iterdir()]
+
+        base = 'tmp'
+        idx = 0
+
+        while True:
+            idx += 1
+            name = f'{base}_{idx}{suffix}'
+
+            if not name in files:
+                return name
+
+    # rename - pathlibのrename分かりにく過ぎる
+    tempName = getUniqueName(path)
+    tmpPath = pathlib.Path(path.parent / tempName)
+
+    path.rename(tmpPath)
+
+    # exec script
+    try:
+        infos = subprocess.check_output([
+            str(_siren_path),
+            str(_siren_script_path),
+            str(tmpPath)])
+
+    finally:
+        # re rename
+        tmpPath.rename(str(path))
+    return infos
+
 # 実行前ﾁｪｯｸ
 def canExecute(ui :adsk.core.UserInterface):
     msgs = []
     
-    if not os.path.isfile(_siren_path):
+    # if not os.path.isfile(_siren_path):
+    if not _siren_path.exists():
         msg = lm.sLng('"mruby_siren" configuration path is wrong!')
-        msgs.append(f'{msg}\n({_siren_path})')
+        msgs.append(f'{msg}\n({str(_siren_path)})')
 
-    if not os.path.isfile(_siren_script_path):
+    # if not os.path.isfile(_siren_script_path):
+    if not _siren_script_path.exists():
         msg = lm.sLng('"siren script" configuration path is wrong!')
-        msgs.append(f'{msg}\n({_siren_path})')
+        msgs.append(f'{msg}\n({str(_siren_path)})')
 
     if len(msgs) > 0:
         ui.messageBox('\n\n'.join(msgs))
@@ -112,7 +145,7 @@ def select_File(ui :adsk.core.UserInterface):
     dlg.filter = '3DCAD (*.ig*s;*.st*p;*.br*p)'
     if dlg.showOpen() != adsk.core.DialogResults.DialogOK :
         return
-    return dlg.filename
+    return pathlib.Path(dlg.filename)
 
 # パラメトリックチェック
 def IsParametric():

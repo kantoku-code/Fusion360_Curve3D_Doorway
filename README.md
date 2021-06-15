@@ -8,7 +8,7 @@ It provides import and export functions for 3D curves.
 
 ## Installation :
 
-To install, download/extract the zip file and register the "Two-turn_Mobius_strip" folder as an add-in.
+To install, download/extract the zip file and register the "Curve3DDoorway" folder as an add-in.
 
 To register an add-in,Please follow the instructions [here](https://knowledge.autodesk.com/support/fusion-360/troubleshooting/caas/sfdcarticles/sfdcarticles/How-to-install-an-ADD-IN-and-Script-in-Fusion-360.html).
 
@@ -18,7 +18,7 @@ To register an add-in,Please follow the instructions [here](https://knowledge.au
 
   ![Alt text](./resources/tool_panel_eng.png)
 
-### 〇 Import (Windows only)
+### 〇 Import (Windows Only)
 
 - After executing the "Import 3D Curves" command, a dialog box to open a file will appear. Select a file of your choice.
 
@@ -34,7 +34,7 @@ To register an add-in,Please follow the instructions [here](https://knowledge.au
 
   ![Alt text](./resources/result_eng.png)
 
-- An error will occur if the file name contains double-byte characters.
+- ~~An error will occur if the file name contains double-byte characters.~~
 
 - Attribute information (thickness, color, line type, etc.) as layers and lines will be ignored.
 
@@ -107,7 +107,7 @@ MIT
 - インポート後は <ファイル名> + "\_3DCurves" の名称のスケッチが作成されます。
   ![Alt text](./resources/result_jpn.png)
 
-- ファイル名に全角文字が含まれている場合、エラーとなります。
+- ~~ファイル名に全角文字が含まれている場合、エラーとなります。~~
 
 - レイヤや線としての属性情報（太さ・色・線種等）は無視されます。
 
