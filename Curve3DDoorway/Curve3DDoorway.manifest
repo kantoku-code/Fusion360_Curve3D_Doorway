@@ -4,7 +4,7 @@
     "id": "1aee3627-10c2-4e98-ae33-f5a0e87008db",
     "author": "kantoku",
     "description": "It provides import and export functions for 3D curves.",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "runOnStartup": false,
     "supportedOS": "windows|mac",
     "editEnabled": true

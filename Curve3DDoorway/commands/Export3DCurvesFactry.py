@@ -21,15 +21,13 @@ class Export3DCurvesFactry:
     def execute():
         ui = adsk.core.UserInterface.cast(None)
         try:
-            app = adsk.core.Application.get()
-            ui  = app.userInterface
-            doc = app.activeDocument
-            des = adsk.fusion.Design.cast(app.activeProduct)
+            app: adsk.core.Application = adsk.core.Application.get()
+            ui: adsk.core.UserInterface = app.userInterface
+            doc: adsk.fusion.FusionDocument = app.activeDocument
             
             # 表示されているスケッチ
-            skts = [skt
-                    for comp in des.allComponents if comp.isSketchFolderLightBulbOn
-                    for skt in comp.sketches if skt.isVisible]
+            skts = getAllShowSketches()
+
             ui.activeSelections.clear()
             
             # 正しい位置でジオメトリ取得
@@ -53,7 +51,10 @@ class Export3DCurvesFactry:
 
             # tempBRep
             tmpMgr = adsk.fusion.TemporaryBRepManager.get()
-            crvs,_ = tmpMgr.createWireFromCurves(geos, True)
+            for geo in geos:
+                pp, _ = tmpMgr.createWireFromCurves([geo], True)
+
+            crvs, _ = tmpMgr.createWireFromCurves(geos, True)
             
             # 実体化
             expRoot = expDes.rootComponent
@@ -61,9 +62,10 @@ class Export3DCurvesFactry:
             bodies.add(crvs)
             
             # 保存
-            res = exportFile(path,expDes.exportManager)
+            res = exportFile(path, expDes.exportManager)
             
             # 一時Docを閉じる
+            expDes.designType = adsk.fusion.DesignTypes.ParametricDesignType
             expDoc.close(False)
             
             # おしまい
@@ -110,41 +112,52 @@ def newDoc(app):
     return app.documents.add(desDoc)
 
 # World座標でのジオメトリ取得
-def getSketchCurvesGeos(skt):
+def getSketchCurvesGeos(skt: adsk.fusion.Sketch):
     if len(skt.sketchCurves) < 1:
-        return None
-    
+        return []
+
     #extension
     adsk.fusion.SketchCurve.toGeoTF = sketchCurveToGeoTransform
-    adsk.fusion.Component.toOcc = componentToOccurrenc
-    
-    mat = skt.transform.copy()
-    occ = skt.parentComponent.toOcc()
-    
-    if not occ is None:
-        mat.transformBy(occ.transform)
+
+    mat: adsk.core.Matrix3D = skt.transform.copy()
+    occ: adsk.fusion.Occurrence = skt.assemblyContext
+
+    if occ:
+        mat.transformBy(occ.transform2)
 
     geos = [crv.toGeoTF(mat) for crv in skt.sketchCurves if not crv.isConstruction]
     
     return geos
 
-# adsk.fusion.SketchCurve
-def sketchCurveToGeoTransform(self,mat3d):
+
+def sketchCurveToGeoTransform(self, mat3d):
     geo = self.geometry.copy()
-    if self.objectType == 'adsk::fusion::SketchEllipse':
+    if self.objectType == adsk.fusion.SketchEllipse.classType():
         geo = geo.asNurbsCurve
     geo.transformBy(mat3d)
     
     return geo
 
-# adsk.fusion.Component 拡張メソッド
-# コンポーネントからオカレンスの取得　ルートはNone
-def componentToOccurrenc(self):
-    root = self.parentDesign.rootComponent
-    if self == root:
-        return None
-        
-    occs = [occ
-            for occ in root.allOccurrencesByComponent(self)
-            if occ.component == self]
-    return occs[0]
+
+def getAllShowSketches() -> list:
+    app: adsk.core.Application = adsk.core.Application.get()
+    des: adsk.fusion.Design = app.activeProduct
+    root: adsk.fusion.Component = des.rootComponent
+
+    # root
+    skts = []
+    skt: adsk.fusion.Sketch
+    if root.isSketchFolderLightBulbOn:
+        skts.extend([skt for skt in root.sketches if skt.isVisible])
+
+    # occ
+    occ: adsk.fusion.Occurrence
+    for occ in root.allOccurrences:
+        if not occ.isVisible:
+            continue
+
+        comp: adsk.fusion.Component = occ.component
+        skts.extend([skt.createForAssemblyContext(occ)
+            for skt in comp.sketches if skt.isVisible])
+
+    return skts
